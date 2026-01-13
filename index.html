@@ -4,508 +4,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masterdata Excel Tool</title>
+    <title>Masterdata Excel Tool Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        .drop-zone {
-            transition: all 0.2s ease;
-            border: 2px dashed #cbd5e1;
-        }
-
-        .drop-zone.dragover {
-            border-color: #3b82f6;
-            background-color: #eff6ff;
-            transform: scale(1.02);
-        }
-
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
-    </style>
+    <!-- Phosphor Icons for better UI -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="bg-slate-50 min-h-screen font-sans text-slate-900">
+<body class="bg-slate-50 min-h-screen font-sans text-slate-900 flex flex-col">
 
-    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl font-black text-slate-800 tracking-tight mb-2 uppercase">Excel Logic Processor</h1>
-            <p class="text-slate-500">Import, Filter, Sort, Deduplicate, and Generate Hierarchies.</p>
-        </header>
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm z-20">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 text-white p-2 rounded-lg">
+                <i class="ph ph-file-csv text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-800 leading-none">Excel Processor<span
+                        class="text-blue-600">Pro</span></h1>
+                <p class="text-xs text-slate-500 mt-1">Logic, Formulas, & Analysis</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div id="fileInfoDisplay" class="hidden text-right">
+                <p id="fileName" class="text-xs font-bold text-slate-700"></p>
+                <p id="fileStats" class="text-[10px] text-slate-400"></p>
+            </div>
+            <button onclick="document.getElementById('fileInput').click()"
+                class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition">
+                <i class="ph ph-upload-simple"></i> Load File
+            </button>
+            <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls, .csv">
+        </div>
+    </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <!-- Left Sidebar: Controls -->
-            <div class="lg:col-span-1 space-y-4">
-                <!-- 1. Upload -->
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">1. Source File</h3>
-                    <div id="dropZone"
-                        class="drop-zone rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer bg-slate-50 hover:bg-white text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500 mb-2" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span class="text-xs font-semibold text-slate-600">Click or Drop File</span>
-                        <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls, .csv">
-                    </div>
-                    <div id="fileInfo" class="mt-2 hidden">
-                        <p id="fileNameDisplay" class="text-xs text-blue-600 font-bold truncate"></p>
-                        <p id="rowCountDisplay" class="text-[10px] text-slate-400"></p>
-                    </div>
-                </div>
+    <!-- Main Workspace -->
+    <div class="flex-1 flex overflow-hidden">
 
-                <!-- 2. Operations Menu -->
-                <div id="opsCard"
-                    class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden opacity-50 pointer-events-none transition-opacity">
-                    <div class="bg-slate-50 p-3 border-b border-slate-100">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">2. Operations</h3>
-                    </div>
+        <!-- Sidebar: Tools -->
+        <div class="w-80 bg-white border-r border-slate-200 flex flex-col z-10 shadow-lg">
+            <!-- Tabs Header -->
+            <div class="flex border-b border-slate-100 bg-slate-50">
+                <button onclick="switchTab('ops')"
+                    class="tab-btn active flex-1 py-3 text-xs font-bold text-slate-500 border-b-2 border-transparent hover:text-blue-600 transition">Operations</button>
+                <button onclick="switchTab('formulas')"
+                    class="tab-btn flex-1 py-3 text-xs font-bold text-slate-500 border-b-2 border-transparent hover:text-blue-600 transition">Formulas</button>
+                <button onclick="switchTab('analysis')"
+                    class="tab-btn flex-1 py-3 text-xs font-bold text-slate-500 border-b-2 border-transparent hover:text-blue-600 transition">Analysis</button>
+            </div>
 
-                    <!-- Tabs Navigation -->
-                    <div class="flex border-b border-slate-100">
-                        <button
-                            class="flex-1 py-2 text-xs font-bold text-blue-600 border-b-2 border-blue-600 focus:outline-none transition-colors"
-                            data-tab="tab-hierarchy">Hierarchy</button>
-                        <button
-                            class="flex-1 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 focus:outline-none transition-colors"
-                            data-tab="tab-filter">Filter</button>
-                        <button
-                            class="flex-1 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 focus:outline-none transition-colors"
-                            data-tab="tab-sort">Sort</button>
-                        <button
-                            class="flex-1 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 focus:outline-none transition-colors"
-                            data-tab="tab-dedup">Dedup</button>
-                    </div>
+            <!-- Tab Content Area -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
 
-                    <div class="p-4 bg-white min-h-[300px]">
-                        <!-- Tab: Hierarchy -->
-                        <div id="tab-hierarchy" class="tab-content block">
-                            <p class="text-[10px] text-slate-500 mb-2">Build UniqueKey + ID from columns:</p>
-                            <div id="hierarchyCols"
-                                class="space-y-1 max-h-48 overflow-y-auto custom-scrollbar mb-3 border border-slate-100 rounded p-2">
-                            </div>
-                            <button id="runHierarchyBtn"
-                                class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded shadow-md transition">Generate
-                                IDs</button>
-                        </div>
-
-                        <!-- Tab: Filter -->
-                        <div id="tab-filter" class="tab-content hidden space-y-3">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1">Column</label>
-                                <select id="filterCol"
-                                    class="w-full text-xs border-slate-200 rounded focus:ring-blue-500 focus:border-blue-500"></select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1">Condition</label>
-                                <select id="filterOp"
-                                    class="w-full text-xs border-slate-200 rounded focus:ring-blue-500 focus:border-blue-500">
+                <!-- 1. OPERATIONS TAB -->
+                <div id="tab-ops" class="tab-section block space-y-6">
+                    <!-- Filter -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <i class="ph ph-funnel"></i> Basic Filter
+                        </h3>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2">
+                            <select id="filterCol" class="w-full text-xs p-2 rounded border-slate-200"></select>
+                            <div class="flex gap-2">
+                                <select id="filterOp" class="w-1/2 text-xs p-2 rounded border-slate-200">
                                     <option value="contains">Contains</option>
                                     <option value="equals">Equals</option>
                                     <option value="starts">Starts With</option>
                                     <option value="ends">Ends With</option>
-                                    <option value="not_contains">Does not contain</option>
                                 </select>
+                                <input type="text" id="filterVal" placeholder="Value"
+                                    class="w-1/2 text-xs p-2 rounded border-slate-200">
                             </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1">Value</label>
-                                <input type="text" id="filterVal"
-                                    class="w-full text-xs border-slate-200 rounded focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Search term...">
-                            </div>
-                            <button id="runFilterBtn"
-                                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded shadow-md transition">Apply
+                            <button onclick="applyFilter()"
+                                class="w-full bg-white border border-slate-200 hover:border-blue-400 text-slate-600 hover:text-blue-600 text-xs font-bold py-2 rounded transition">Apply
                                 Filter</button>
-                            <button id="resetDataBtn"
-                                class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold py-2 rounded transition mt-2">Reset
-                                All Data</button>
-                        </div>
-
-                        <!-- Tab: Sort -->
-                        <div id="tab-sort" class="tab-content hidden space-y-3">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1">Sort By</label>
-                                <select id="sortCol"
-                                    class="w-full text-xs border-slate-200 rounded focus:ring-emerald-500 focus:border-emerald-500"></select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1">Order</label>
-                                <select id="sortOrder"
-                                    class="w-full text-xs border-slate-200 rounded focus:ring-emerald-500 focus:border-emerald-500">
-                                    <option value="asc">Ascending (A-Z, 0-9)</option>
-                                    <option value="desc">Descending (Z-A, 9-0)</option>
-                                </select>
-                            </div>
-                            <button id="runSortBtn"
-                                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded shadow-md transition">Apply
-                                Sort</button>
-                        </div>
-
-                        <!-- Tab: Dedup -->
-                        <div id="tab-dedup" class="tab-content hidden space-y-3">
-                            <p class="text-[10px] text-slate-500">Remove duplicate rows based on:</p>
-                            <div class="flex items-center mb-2 bg-rose-50 p-2 rounded">
-                                <input type="checkbox" id="dedupAll"
-                                    class="w-3 h-3 rounded text-rose-500 focus:ring-rose-500">
-                                <label for="dedupAll" class="ml-2 text-xs font-bold text-rose-700 cursor-pointer">Select
-                                    All Columns</label>
-                            </div>
-                            <div id="dedupCols"
-                                class="space-y-1 max-h-40 overflow-y-auto custom-scrollbar mb-3 pl-1 border border-slate-100 rounded p-2">
-                            </div>
-                            <button id="runDedupBtn"
-                                class="w-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2 rounded shadow-md transition">Remove
-                                Duplicates</button>
+                            <button onclick="resetData()"
+                                class="w-full text-red-500 hover:text-red-700 text-[10px] font-bold py-1">Reset All
+                                Data</button>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Right: Data Preview -->
-            <div class="lg:col-span-3 space-y-4">
-                <div id="previewCard"
-                    class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[600px] hidden">
-                    <div
-                        class="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
-                        <div>
-                            <h2 class="text-sm font-bold text-slate-700">Data Preview</h2>
-                            <p id="previewStats" class="text-[10px] text-slate-400">0 rows</p>
+                    <!-- Sort -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <i class="ph ph-sort-ascending"></i> Sort
+                        </h3>
+                        <div class="flex gap-2">
+                            <select id="sortCol"
+                                class="w-full text-xs p-2 rounded border-slate-200 bg-slate-50"></select>
+                            <button onclick="applySort()"
+                                class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded border border-slate-200">
+                                <i class="ph ph-arrows-down-up"></i>
+                            </button>
                         </div>
-                        <button id="exportBtn"
-                            class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded flex items-center gap-2 shadow-sm transition-transform hover:scale-105">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                            Export XLSX
+                    </div>
+
+                    <!-- Dedup -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <i class="ph ph-copy"></i> Deduplicate
+                        </h3>
+                        <button onclick="applyDedup()"
+                            class="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 text-xs font-bold py-2 rounded transition">
+                            Remove Exact Duplicates
                         </button>
                     </div>
 
-                    <!-- Table Container -->
-                    <div class="flex-1 overflow-auto custom-scrollbar p-0 relative">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead class="bg-slate-100 text-slate-600 sticky top-0 z-10 shadow-sm">
-                                <tr id="tableHeaderRow"></tr>
-                            </thead>
-                            <tbody id="tableBody" class="divide-y divide-slate-100 bg-white"></tbody>
-                        </table>
+                    <!-- Hierarchy (Legacy) -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <i class="ph ph-tree-structure"></i> Hierarchy ID
+                        </h3>
+                        <div id="hierarchyList"
+                            class="max-h-32 overflow-y-auto text-xs bg-slate-50 p-2 rounded border border-slate-100">
+                        </div>
+                        <button onclick="applyHierarchy()"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded shadow-md transition">Generate
+                            IDs</button>
                     </div>
                 </div>
 
-                <!-- Empty State -->
-                <div id="emptyState"
-                    class="h-[600px] flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                    <div class="text-center text-slate-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 text-slate-300"
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <p class="mb-1 text-sm font-medium">No Data Loaded</p>
-                        <p class="text-xs">Upload an Excel or CSV file to begin</p>
+                <!-- 2. FORMULAS TAB -->
+                <div id="tab-formulas" class="tab-section hidden space-y-6">
+                    <div class="p-3 bg-indigo-50 border border-indigo-100 rounded-xl">
+                        <label class="block text-[10px] font-bold text-indigo-400 uppercase mb-1">Target Column
+                            Name</label>
+                        <input type="text" id="newColName" placeholder="e.g. Full_Name"
+                            class="w-full text-xs p-2 rounded border-indigo-200 mb-3 focus:ring-indigo-500">
+
+                        <!-- Operation Type Selector -->
+                        <div class="flex gap-1 mb-3 bg-white p-1 rounded border border-indigo-100">
+                            <button onclick="setFormulaMode('text')" id="mode-text"
+                                class="f-mode flex-1 text-[10px] font-bold py-1 rounded bg-indigo-100 text-indigo-700">Text</button>
+                            <button onclick="setFormulaMode('math')" id="mode-math"
+                                class="f-mode flex-1 text-[10px] font-bold py-1 rounded text-slate-400 hover:text-indigo-600">Math</button>
+                            <button onclick="setFormulaMode('logic')" id="mode-logic"
+                                class="f-mode flex-1 text-[10px] font-bold py-1 rounded text-slate-400 hover:text-indigo-600">Logic</button>
+                        </div>
+
+                        <!-- Dynamic Inputs -->
+                        <div id="formulaInputs" class="space-y-3">
+                            <!-- Injected by JS based on mode -->
+                        </div>
+
+                        <button onclick="applyFormula()"
+                            class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded shadow-md transition">
+                            Create Column
+                        </button>
                     </div>
                 </div>
+
+                <!-- 3. ANALYSIS TAB -->
+                <div id="tab-analysis" class="tab-section hidden space-y-6">
+                    <!-- Summarize -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <i class="ph ph-sigma"></i> Group & Summarize
+                        </h3>
+                        <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100 space-y-2">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500">Group By (Category)</label>
+                                <select id="groupByCol" class="w-full text-xs p-1 rounded"></select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500">Calculate (Value)</label>
+                                <select id="calcCol" class="w-full text-xs p-1 rounded"></select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500">Function</label>
+                                <select id="aggFunc" class="w-full text-xs p-1 rounded">
+                                    <option value="SUM">SUM</option>
+                                    <option value="COUNT">COUNT</option>
+                                    <option value="AVERAGE">AVERAGE</option>
+                                    <option value="MIN">MIN</option>
+                                    <option value="MAX">MAX</option>
+                                </select>
+                            </div>
+                            <button onclick="runAnalysis()"
+                                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 rounded shadow-md transition">
+                                Create Summary Table
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tools -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <i class="ph ph-wrench"></i> Tools
+                        </h3>
+                        <button onclick="runUnique()"
+                            class="w-full text-left px-3 py-2 bg-white border border-slate-200 rounded text-xs hover:bg-slate-50 font-medium">
+                            <i class="ph ph-list-numbers mr-2 text-blue-500"></i> Extract Unique List
+                        </button>
+                        <button onclick="runTranspose()"
+                            class="w-full text-left px-3 py-2 bg-white border border-slate-200 rounded text-xs hover:bg-slate-50 font-medium">
+                            <i class="ph ph-arrows-clockwise mr-2 text-purple-500"></i> Transpose Data
+                        </button>
+                        <button onclick="alert('VLOOKUP implemented as Merge - coming soon in V2!')"
+                            class="w-full text-left px-3 py-2 bg-white border border-slate-200 rounded text-xs hover:bg-slate-50 font-medium opacity-50 cursor-not-allowed">
+                            <i class="ph ph-magnifying-glass mr-2 text-slate-400"></i> VLOOKUP (Coming Soon)
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Main Content: Data Grid -->
+        <div class="flex-1 bg-slate-100 flex flex-col overflow-hidden relative">
+            <!-- Toolbar -->
+            <div class="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between">
+                <div class="flex items-center gap-4 text-xs">
+                    <span id="viewLabel" class="font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">Main
+                        Data</span>
+                    <span id="rowCount" class="text-slate-500">0 rows</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="exportData()"
+                        class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded flex items-center gap-2">
+                        <i class="ph ph-download-simple"></i> Export
+                    </button>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div
+                    class="text-center text-slate-400 p-8 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50/50">
+                    <i class="ph ph-upload text-4xl mb-2"></i>
+                    <p>Load a file to begin</p>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="flex-1 overflow-auto custom-scrollbar bg-white shadow-inner" id="tableContainer">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-50 text-slate-600 sticky top-0 z-10 shadow-sm font-bold">
+                        <tr id="tableHead"></tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-600"></tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <script>
-        let originalData = [];
-        let workingData = []; // The data currently being viewed/filtered
-        let headers = [];
-
-        // DOM Elements
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-
-        const opsCard = document.getElementById('opsCard');
-        const fileInfo = document.getElementById('fileInfo');
-        const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const rowCountDisplay = document.getElementById('rowCountDisplay');
-
-        const previewCard = document.getElementById('previewCard');
-        const emptyState = document.getElementById('emptyState');
-        const checkAllDedup = document.getElementById('dedupAll');
-
-        // Tabs Logic
-        const tabs = document.querySelectorAll('[data-tab]');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                // Reset styles
-                tabs.forEach(t => {
-                    t.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
-                    t.classList.add('text-slate-500');
-                });
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-
-                // Active style
-                tab.classList.remove('text-slate-500');
-                tab.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
-                document.getElementById(tab.dataset.tab).classList.remove('hidden');
-            });
-        });
-
-        // File Handling
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-        dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
-        dropZone.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => { if (e.target.files[0]) loadFile(e.target.files[0]); });
-
-        function loadFile(file) {
-            fileNameDisplay.innerText = file.name;
-            fileInfo.classList.remove('hidden');
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const ws = workbook.Sheets[workbook.SheetNames[0]];
-                    // raw: false ensures we get strings, but might be slower? Keeping raw mostly safe.
-                    originalData = XLSX.utils.sheet_to_json(ws, { defval: "" });
-
-                    if (originalData.length > 0) {
-                        headers = Object.keys(originalData[0]);
-                        workingData = [...originalData];
-                        initUI();
-                        renderTable();
-                        alert(`Loaded ${originalData.length} rows.`);
-                    } else {
-                        alert("File appears empty.");
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert("Error reading file. Ensure it's a valid Excel/CSV.");
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function initUI() {
-            opsCard.classList.remove('opacity-50', 'pointer-events-none');
-            emptyState.classList.add('hidden');
-            previewCard.classList.remove('hidden');
-
-            updateStats();
-            populateDropdowns();
-            populateCheckboxes();
-        }
-
-        function populateDropdowns() {
-            const selects = [document.getElementById('filterCol'), document.getElementById('sortCol')];
-            selects.forEach(sel => {
-                sel.innerHTML = '';
-                headers.forEach(h => {
-                    const opt = document.createElement('option');
-                    opt.value = h;
-                    opt.innerText = h;
-                    sel.appendChild(opt);
-                });
-            });
-        }
-
-        function populateCheckboxes() {
-            // Hierarchy
-            const hContainer = document.getElementById('hierarchyCols');
-            hContainer.innerHTML = '';
-            headers.forEach(h => {
-                const isDef = ["Category", "SubCategory", "MinorCategory", "Product", "Type"].some(k => h.includes(k));
-                hContainer.innerHTML += `
-                    <div class="flex items-center">
-                        <input type="checkbox" value="${h}" ${isDef ? 'checked' : ''} class="custom-checkbox w-3 h-3 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
-                        <label class="ml-2 text-xs text-slate-600 truncate cursor-pointer select-none">${h}</label>
-                    </div>`;
-            });
-
-            // Dedup
-            const dContainer = document.getElementById('dedupCols');
-            dContainer.innerHTML = '';
-            headers.forEach(h => {
-                dContainer.innerHTML += `
-                    <div class="flex items-center">
-                        <input type="checkbox" value="${h}" class="dedup-chk w-3 h-3 text-rose-500 rounded border-slate-300 focus:ring-rose-500">
-                        <label class="ml-2 text-xs text-slate-600 truncate cursor-pointer select-none">${h}</label>
-                    </div>`;
-            });
-        }
-
-        checkAllDedup.addEventListener('change', (e) => {
-            document.querySelectorAll('.dedup-chk').forEach(c => c.checked = e.target.checked);
-        });
-
-        // --- OPERATIONS ---
-
-        // 1. Hierarchy (Existing Logic)
-        document.getElementById('runHierarchyBtn').addEventListener('click', () => {
-            const inputs = Array.from(document.querySelectorAll('#hierarchyCols input:checked'));
-            const cols = inputs.map(i => i.value);
-            if (!cols.length) return alert("Select at least 1 column");
-
-            const tempMap = new Map();
-            let idCounter = 1;
-
-            // Operates on currently filtered data (workingData)
-            workingData = workingData.map(row => {
-                const key = cols.map(c => String(row[c] || "").trim()).join('|');
-                if (!tempMap.has(key)) tempMap.set(key, idCounter++);
-                return { ...row, "UniqueKey": key, "ID": tempMap.get(key) };
-            });
-
-            // Re-render
-            headers = Object.keys(workingData[0]); // Update headers to include new keys
-            renderTable();
-            alert(`Generated IDs for ${workingData.length} rows.`);
-        });
-
-        // 2. Filter
-        document.getElementById('runFilterBtn').addEventListener('click', () => {
-            const col = document.getElementById('filterCol').value;
-            const op = document.getElementById('filterOp').value;
-            const val = document.getElementById('filterVal').value.toLowerCase();
-
-            const startCount = workingData.length;
-            workingData = workingData.filter(row => {
-                const cell = String(row[col] || "").toLowerCase();
-                if (op === 'contains') return cell.includes(val);
-                if (op === 'equals') return cell === val;
-                if (op === 'starts') return cell.startsWith(val);
-                if (op === 'ends') return cell.endsWith(val);
-                if (op === 'not_contains') return !cell.includes(val);
-                return true;
-            });
-
-            renderTable();
-            // Optional feedack
-            console.log(`Filtered: ${startCount} -> ${workingData.length}`);
-        });
-
-        document.getElementById('resetDataBtn').addEventListener('click', () => {
-            workingData = [...originalData];
-            renderTable();
-        });
-
-        // 3. Sort
-        document.getElementById('runSortBtn').addEventListener('click', () => {
-            const col = document.getElementById('sortCol').value;
-            const order = document.getElementById('sortOrder').value;
-
-            workingData.sort((a, b) => {
-                const valA = String(a[col] || "").toLowerCase();
-                const valB = String(b[col] || "").toLowerCase();
-
-                // Try numeric sort
-                const numA = parseFloat(valA);
-                const numB = parseFloat(valB);
-                const isNumA = !isNaN(numA) && valA.trim() !== "";
-                const isNumB = !isNaN(numB) && valB.trim() !== "";
-
-                if (isNumA && isNumB) {
-                    return order === 'asc' ? numA - numB : numB - numA;
-                }
-
-                if (valA < valB) return order === 'asc' ? -1 : 1;
-                if (valA > valB) return order === 'asc' ? 1 : -1;
-                return 0;
-            });
-            renderTable();
-        });
-
-        // 4. Dedup
-        document.getElementById('runDedupBtn').addEventListener('click', () => {
-            const inputs = Array.from(document.querySelectorAll('#dedupCols input:checked'));
-            const cols = inputs.map(i => i.value);
-            // If none checked, assume all columns (deep equality-ish)
-            const effectiveCols = cols.length ? cols : headers;
-
-            const seen = new Set();
-            const startCount = workingData.length;
-
-            workingData = workingData.filter(row => {
-                const key = effectiveCols.map(c => String(row[c] || "").trim()).join('|||');
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-            });
-
-            renderTable();
-            alert(`Removed ${startCount - workingData.length} duplicates.`);
-        });
-
-        // Rendering & Export
-        function renderTable() {
-            updateStats();
-
-            const thead = document.getElementById('tableHeaderRow');
-            thead.innerHTML = '';
-            headers.forEach(h => {
-                const th = document.createElement('th');
-                th.className = "px-4 py-2 font-bold whitespace-nowrap bg-slate-50 border-b border-r border-slate-200 last:border-r-0";
-                th.innerText = h;
-                thead.appendChild(th);
-            });
-
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
-
-            // Limit generic rendering to 100 rows for perf
-            // For a "large file" tool, we must prioritize UI responsiveness.
-            const displayData = workingData.slice(0, 100);
-
-            displayData.forEach((row, idx) => {
-                const tr = document.createElement('tr');
-                tr.className = idx % 2 === 0 ? "bg-white hover:bg-slate-50" : "bg-slate-50/50 hover:bg-slate-50";
-                headers.forEach(h => {
-                    const td = document.createElement('td');
-                    td.className = "px-4 py-2 border-b border-slate-100 truncate max-w-[200px] text-slate-700";
-                    td.innerText = row[h];
-                    td.title = row[h]; // Tooltip
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-
-            if (workingData.length > 100) {
-                const tr = document.createElement('tr');
-                const rem = workingData.length - 100;
-                tr.innerHTML = `<td colspan="${headers.length}" class="p-4 text-center text-slate-400 text-xs italic bg-slate-50 border-t border-slate-200">... and ${rem} more rows (export to see all)</td>`;
-                tbody.appendChild(tr);
-            }
-        }
-
-        function updateStats() {
-            if (originalData.length) {
-                rowCountDisplay.innerText = `${originalData.length} total rows`;
-            }
-            document.getElementById('previewStats').innerText = `Showing ${Math.min(workingData.length, 100)} of ${workingData.length} active rows`;
-        }
-
-        document.getElementById('exportBtn').addEventListener('click', () => {
-            if (!workingData.length) return alert("No data to export.");
-
-            // Create a filename based on action or date
-            const date = new Date().toISOString().split('T')[0];
-            const name = `Processed_Data_${date}.xlsx`;
-
-            const ws = XLSX.utils.json_to_sheet(workingData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Result");
-            XLSX.writeFile(wb, name);
-        });
-
-    </script>
+    <!-- Custom Script -->
+    <script src="script.js"></script>
 </body>
 
 </html>
